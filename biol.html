@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biology & Medical Quiz</title>
+    <style>
+        /* CSS for basic styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .controls {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .controls label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .controls input[type="number"] {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 60px;
+            text-align: center;
+        }
+        .controls button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .controls button:hover {
+            background-color: #218838;
+        }
+        .question-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .question-text {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+        .options-list {
+            list-style: none;
+            padding: 0;
+        }
+        .option-item {
+            margin-bottom: 8px;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .option-item:hover {
+            background-color: #e2f0ff;
+        }
+        .option-item input[type="radio"] {
+            margin-right: 10px;
+        }
+        
+        /* Styles for score checking feedback */
+        .correct {
+            background-color: #d4edda; /* Light green for correct */
+            border: 2px solid #28a745;
+        }
+        .incorrect {
+            background-color: #f8d7da; /* Light red for incorrect */
+            border: 2px solid #dc3545;
+        }
+
+        .answer-feedback {
+            margin-top: 5px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .correct .answer-feedback {
+            color: #155724;
+        }
+        .incorrect .answer-feedback {
+            color: #721c24;
+        }
+
+
+        .answer {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e6ffed;
+            border-left: 5px solid #28a745;
+            font-weight: bold;
+            display: none;
+        }
+        .show-answer-btn {
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .show-answer-btn:hover {
+            background-color: #e0a800;
+        }
+        .score-card {
+            text-align: center;
+            font-size: 1.5em;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            font-weight: bold;
+        }
+        #submitButton {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 1.2em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #submitButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔬 Biology & Medical Quiz</h1>
+    
+    <div class="controls">
+        <label for="questionCount">Number of Questions:</label>
+        <input type="number" id="questionCount" min="1" max="20" value="10">
+        
+        <label>
+            <input type="checkbox" id="showAnswersToggle">
+            Show Answers after Submission
+        </label>
+        
+        <button onclick="generateQuiz()">Start New Quiz</button>
+    </div>
+
+    <form id="quizForm">
+        <div id="quizContainer">
+            </div>
+        <button type="button" id="submitButton" onclick="checkAnswers()">Submit Quiz</button>
+    </form>
+
+    <div id="scoreCard" class="score-card" style="display: none;">
+        </div>
+</div>
+
+<script>
+    // Global variable to hold the current set of questions for scoring
+    let currentQuizQuestions = [];
+
+    // 1. The Question Data
+    const allQuestions = [
+        { question: "Which of the following is NOT a type of cytoskeletal filament?", options: ["Actin filaments", "Microtubules", "Collagen fibers", "Intermediate filaments"], answer: "Collagen fibers" },
+        { question: "What is the function of the nucleolus?", options: ["Protein synthesis", "Ribosome assembly", "DNA replication", "Lipid metabolism"], answer: "Ribosome assembly" },
+        { question: "Which organelle is responsible for detoxifying drugs and synthesizing lipids?", options: ["Rough ER", "Smooth ER", "Golgi apparatus", "Lysosomes"], answer: "Smooth ER" },
+        { question: "A mutation in the CFTR gene leads to which autosomal recessive disorder?", options: ["Huntington’s disease", "Cystic fibrosis", "Sickle cell anemia", "Down syndrome"], answer: "Cystic fibrosis" },
+        { question: "During which phase of the cell cycle does DNA replication occur?", options: ["G1 phase", "S phase", "G2 phase", "M phase"], answer: "S phase" },
+        { question: "Which tissue type is avascular and has high regenerative capacity?", options: ["Connective tissue", "Nervous tissue", "Epithelial tissue", "Muscle tissue"], answer: "Epithelial tissue" },
+        { question: "What is the main function of chondrocytes?", options: ["Blood cell production", "Bone remodeling", "Secretion of cartilage matrix", "Muscle contraction"], answer: "Secretion of cartilage matrix" },
+        { question: "Which blood vessel type has valves to prevent backflow?", options: ["Arteries", "Arterioles", "Veins", "Capillaries"], answer: "Veins" },
+        { question: "Which hormone is produced by the pineal gland and regulates sleep cycles?", options: ["Melatonin", "Cortisol", "Insulin", "Thyroxine"], answer: "Melatonin" },
+        { question: "Where does most nutrient absorption occur in the digestive system?", options: ["Stomach", "Small intestine", "Large intestine", "Esophagus"], answer: "Small intestine" },
+        { question: "Which of the following is a Gram-positive bacterium?", options: ["Escherichia coli", "Salmonella", "Streptococcus pneumoniae", "Pseudomonas aeruginosa"], answer: "Streptococcus pneumoniae" },
+        { question: "What is the primary role of dendritic cells in the immune system?", options: ["Phagocytosis of bacteria", "Antigen presentation", "Antibody production", "Histamine release"], answer: "Antigen presentation" },
+        { question: "Which type of vaccine uses weakened live pathogens?", options: ["Inactivated vaccine", "Subunit vaccine", "mRNA vaccine", "Live attenuated vaccine"], answer: "Live attenuated vaccine" },
+        { question: "What is the vector for malaria transmission?", options: ["Mosquito", "Tick", "Flea", "Sandfly"], answer: "Mosquito" },
+        { question: "Which immune cell is responsible for antibody production?", options: ["T-cell", "B-cell", "Natural killer cell", "Macrophage"], answer: "B-cell" },
+        { question: "Which cancer type originates from epithelial cells?", options: ["Sarcoma", "Leukemia", "Carcinoma", "Glioma"], answer: "Carcinoma" },
+        { question: "What is the hallmark of Alzheimer’s disease at the cellular level?", options: ["Tau tangles and amyloid plaques", "Loss of dopamine neurons", "Autoantibodies attacking myelin", "Mitochondrial dysfunction"], answer: "Tau tangles and amyloid plaques" },
+        { question: "Which genetic disorder results from trisomy 21?", options: ["Turner syndrome", "Klinefelter syndrome", "Down syndrome", "Edwards syndrome"], answer: "Down syndrome" },
+        { question: "What is the main risk factor for developing type 2 diabetes?", options: ["Autoimmune destruction of beta cells", "Insulin resistance and obesity", "Viral infection", "Genetic mutation in glucagon receptors"], answer: "Insulin resistance and obesity" },
+        { question: "Which of the following is a symptom of COPD?", options: ["High blood pressure", "Shortness of breath", "Joint pain", "Skin rash"], answer: "Shortness of breath" },
+        {
+        "question": "Which of the following mutations would most likely result in a nonfunctional protein?",
+        "options": [
+            "Silent mutation",
+            "Missense mutation in a non-critical region",
+            "Nonsense mutation early in the coding sequence",
+            "Frameshift mutation due to insertion of three nucleotides"
+        ],
+        "answer": "Nonsense mutation early in the coding sequence"
+    },
+    {
+        "question": "During which process does crossing over occur?",
+        "options": [
+            "Mitosis",
+            "Meiosis I",
+            "Meiosis II",
+            "DNA replication"
+        ],
+        "answer": "Meiosis I"
+    },
+    {
+        "question": "Which of the following is NOT involved in transcription?",
+        "options": [
+            "RNA polymerase",
+            "Promoter region",
+            "Ribosome",
+            "DNA template"
+        ],
+        "answer": "Ribosome"
+    },
+    {
+        "question": "What type of inheritance is shown when a trait appears in every generation and affects both males and females equally?",
+        "options": [
+            "Autosomal dominant",
+            "Autosomal recessive",
+            "X-linked dominant",
+            "X-linked recessive"
+        ],
+        "answer": "Autosomal dominant"
+    },
+    {
+        "question": "Which of the following is TRUE about the pulmonary circuit?",
+        "options": [
+            "It carries oxygenated blood from the lungs to the heart",
+            "It is part of the systemic circulation",
+            "It involves the right ventricle pumping blood to the lungs",
+            "It begins in the left atrium"
+        ],
+        "answer": "It involves the right ventricle pumping blood to the lungs"
+    },
+    {
+        "question": "What is the functional unit of the kidney where filtration occurs?",
+        "options": [
+            "Nephron",
+            "Glomerulus",
+            "Collecting duct",
+            "Loop of Henle"
+        ],
+        "answer": "Glomerulus"
+    },
+    {
+        "question": "Which hormone is responsible for stimulating uterine contractions during childbirth?",
+        "options": [
+            "Progesterone",
+            "Oxytocin",
+            "Estrogen",
+            "Prolactin"
+        ],
+        "answer": "Oxytocin"
+    },
+    {
+        "question": "Where are neurotransmitters stored before release?",
+        "options": [
+            "Dendrites",
+            "Synaptic vesicles",
+            "Myelin sheath",
+            "Axon hillock"
+        ],
+        "answer": "Synaptic vesicles"
+    },
+    {
+        "question": "Which of the following is a characteristic of Gram-negative bacteria?",
+        "options": [
+            "Thick peptidoglycan layer",
+            "Retains crystal violet stain",
+            "Has an outer membrane containing lipopolysaccharides",
+            "Lacks a cell wall"
+        ],
+        "answer": "Has an outer membrane containing lipopolysaccharides"
+    },
+    {
+        "question": "What is the primary role of memory B cells?",
+        "options": [
+            "Phagocytose pathogens",
+            "Produce antibodies immediately upon infection",
+            "Rapidly respond upon re-exposure to an antigen",
+            "Activate cytotoxic T cells"
+        ],
+        "answer": "Rapidly respond upon re-exposure to an antigen"
+    },
+    {
+        "question": "Which type of vaccine uses a harmless viral vector to deliver genetic material?",
+        "options": [
+            "Live attenuated",
+            "Inactivated",
+            "mRNA",
+            "Viral vector"
+        ],
+        "answer": "Viral vector"
+    },
+    {
+        "question": "Which of the following is an example of a prion disease?",
+        "options": [
+            "Tuberculosis",
+            "Creutzfeldt-Jakob disease",
+            "Malaria",
+            "Hepatitis B"
+        ],
+        "answer": "Creutzfeldt-Jakob disease"
+    },
+    {
+        "question": "Which of the following cancers originates from connective tissue?",
+        "options": [
+            "Carcinoma",
+            "Sarcoma",
+            "Leukemia",
+            "Lymphoma"
+        ],
+        "answer": "Sarcoma"
+    },
+    {
+        "question": "What is the main pathological feature of Parkinson’s disease?",
+        "options": [
+            "Amyloid plaques in the brain",
+            "Loss of dopaminergic neurons in the substantia nigra",
+            "Autoimmune destruction of myelin",
+            "Neurofibrillary tangles only"
+        ],
+        "answer": "Loss of dopaminergic neurons in the substantia nigra"
+    },
+    {
+        "question": "Which genetic disorder is caused by a mutation in the lamin A gene?",
+        "options": [
+            "Huntington’s disease",
+            "Progeria",
+            "Cystic fibrosis",
+            "Turner syndrome"
+        ],
+        "answer": "Progeria"
+    },
+    {
+        "question": "What is a common complication of uncontrolled type 2 diabetes?",
+        "options": [
+            "Osteoporosis",
+            "Atherosclerosis",
+            "Asthma",
+            "Rheumatoid arthritis"
+        ],
+        "answer": "Atherosclerosis"
+    },
+    {
+        "question": "Which of the following is a key difference between prokaryotic and eukaryotic cells?",
+        "options": [
+            "Presence of a nucleus",
+            "Presence of ribosomes",
+            "Presence of a plasma membrane",
+            "Presence of DNA"
+        ],
+        "answer": "Presence of a nucleus"
+    },
+    {
+        "question": "What is the primary function of the mitochondria?",
+        "options": [
+            "Protein synthesis",
+            "Lipid synthesis",
+            "ATP production",
+            "Waste digestion"
+        ],
+        "answer": "ATP production"
+    },
+    {
+        "question": "Which molecule is known as the \"energy currency of the cell\"?",
+        "options": [
+            "Glucose",
+            "ATP",
+            "NADH",
+            "FADH₂"
+        ],
+        "answer": "ATP"
+    },
+    {
+        "question": "What type of bond holds the two strands of DNA together?",
+        "options": [
+            "Ionic bonds",
+            "Covalent bonds",
+            "Hydrogen bonds",
+            "Peptide bonds"
+        ],
+        "answer": "Hydrogen bonds"
+    },
+    {
+        "question": "Which part of the brain is responsible for balance and coordination?",
+        "options": [
+            "Cerebrum",
+            "Cerebellum",
+            "Brainstem",
+            "Hypothalamus"
+        ],
+        "answer": "Cerebellum"
+    },
+    {
+        "question": "What is the main function of red blood cells?",
+        "options": [
+            "Fight infection",
+            "Transport oxygen",
+            "Blood clotting",
+            "Produce antibodies"
+        ],
+        "answer": "Transport oxygen"
+    },
+    {
+        "question": "Which of the following is NOT a function of the liver?",
+        "options": [
+            "Bile production",
+            "Detoxification",
+            "Insulin production",
+            "Glycogen storage"
+        ],
+        "answer": "Insulin production"
+    },
+    {
+        "question": "Where does gas exchange occur in the lungs?",
+        "options": [
+            "Bronchi",
+            "Alveoli",
+            "Trachea",
+            "Pleura"
+        ],
+        "answer": "Alveoli"
+    },
+    {
+        "question": "Which of the following is a viral disease?",
+        "options": [
+            "Tuberculosis",
+            "Cholera",
+            "Influenza",
+            "Tetanus"
+        ],
+        "answer": "Influenza"
+    },
+    {
+        "question": "What is the vector for Lyme disease?",
+        "options": [
+            "Mosquito",
+            "Tick",
+            "Flea",
+            "Fly"
+        ],
+        "answer": "Tick"
+    },
+    {
+        "question": "Which of the following is a fungal infection?",
+        "options": [
+            "Malaria",
+            "Athlete’s foot",
+            "Typhoid",
+            "Cholera"
+        ],
+        "answer": "Athlete’s foot"
+    },
+    {
+        "question": "What is the primary method of HIV transmission?",
+        "options": [
+            "Airborne droplets",
+            "Contaminated food",
+            "Blood and bodily fluids",
+            "Insect bites"
+        ],
+        "answer": "Blood and bodily fluids"
+    },
+    {
+        "question": "Which of the following is an example of a homozygous genotype?",
+        "options": [
+            "Aa",
+            "AA",
+            "AB",
+            "aa"
+        ],
+        "answer": "AA"
+    },
+    {
+        "question": "What is the term for a change in DNA sequence?",
+        "options": [
+            "Translation",
+            "Transcription",
+            "Mutation",
+            "Replication"
+        ],
+        "answer": "Mutation"
+    },
+    {
+        "question": "Who proposed the theory of natural selection?",
+        "options": [
+            "Gregor Mendel",
+            "Charles Darwin",
+            "Louis Pasteur",
+            "James Watson"
+        ],
+        "answer": "Charles Darwin"
+    },
+    {
+        "question": "Which of the following is NOT a type of natural selection?",
+        "options": [
+            "Stabilizing selection",
+            "Disruptive selection",
+            "Directional selection",
+            "Artificial selection"
+        ],
+        "answer": "Artificial selection"
+    },
+    {
+        "question": "What is the term for the role a species plays in its ecosystem?",
+        "options": [
+            "Habitat",
+            "Niche",
+            "Biome",
+            "Territory"
+        ],
+        "answer": "Niche"
+    },
+    {
+        "question": "Which of the following is a renewable resource?",
+        "options": [
+            "Coal",
+            "Natural gas",
+            "Solar energy",
+            "Oil"
+        ],
+        "answer": "Solar energy"
+    },
+    {
+        "question": "What is the primary greenhouse gas responsible for global warming?",
+        "options": [
+            "Oxygen",
+            "Carbon dioxide",
+            "Nitrogen",
+            "Methane"
+        ],
+        "answer": "Carbon dioxide"
+    },
+    {
+        "question": "Which process converts nitrogen gas into a form plants can use?",
+        "options": [
+            "Photosynthesis",
+            "Nitrogen fixation",
+            "Respiration",
+            "Transpiration"
+        ],
+        "answer": "Nitrogen fixation"
+    }
+    ];
+
+    // Helper function to shuffle an array (Fisher-Yates algorithm)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    // Function to generate and display the quiz
+    function generateQuiz() {
+        const quizContainer = document.getElementById('quizContainer');
+        const questionCountInput = document.getElementById('questionCount');
+        const scoreCard = document.getElementById('scoreCard');
+        
+        // 1. Get user preferences
+        let numQuestions = parseInt(questionCountInput.value);
+        
+        // Input validation
+        if (isNaN(numQuestions) || numQuestions < 1) {
+            numQuestions = 1;
+        } else if (numQuestions > allQuestions.length) {
+            numQuestions = allQuestions.length;
+        }
+        
+        // 2. Shuffle and select questions
+        shuffleArray(allQuestions);
+        currentQuizQuestions = allQuestions.slice(0, numQuestions);
+        
+        // 3. Clear the previous quiz and score
+        quizContainer.innerHTML = '';
+        scoreCard.style.display = 'none';
+        document.getElementById('submitButton').style.display = 'block';
+
+        // 4. Generate the HTML for each question
+        currentQuizQuestions.forEach((q, index) => {
+            // Shuffle options for this question
+            shuffleArray(q.options);
+            
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            // Question Text
+            let htmlContent = `<div class="question-text">${index + 1}. ${q.question}</div>`;
+            
+            // Options List (using radio buttons for selection)
+            htmlContent += '<ul class="options-list">';
+            q.options.forEach((option, optionIndex) => {
+                // Use the question index as the radio group name
+                const radioName = `q${index}`; 
+                htmlContent += `
+                    <li class="option-item">
+                        <label>
+                            <input type="radio" name="${radioName}" value="${option}">
+                            ${String.fromCharCode(97 + optionIndex)}) ${option}
+                        </label>
+                    </li>
+                `;
+            });
+            htmlContent += '</ul>';
+
+            card.innerHTML = htmlContent;
+            quizContainer.appendChild(card);
+        });
+    }
+
+    // Function to check answers and display results/score
+    function checkAnswers() {
+        let score = 0;
+        const totalQuestions = currentQuizQuestions.length;
+        const quizForm = document.getElementById('quizForm');
+        const scoreCard = document.getElementById('scoreCard');
+        const showAnswers = document.getElementById('showAnswersToggle').checked;
+
+        currentQuizQuestions.forEach((q, index) => {
+            const questionCard = document.getElementById('quizContainer').children[index];
+            const radioName = `q${index}`;
+            const selectedInput = quizForm.elements[radioName].value; // Gets the value of the selected radio button
+
+            // Remove previous feedback classes
+            questionCard.classList.remove('correct', 'incorrect');
+            
+            let feedbackHTML = '';
+
+            if (selectedInput) {
+                if (selectedInput === q.answer) {
+                    score++;
+                    questionCard.classList.add('correct');
+                    feedbackHTML = '<div class="answer-feedback">✅ Correct!</div>';
+                } else {
+                    questionCard.classList.add('incorrect');
+                    feedbackHTML = '<div class="answer-feedback">❌ Incorrect.</div>';
+                }
+            } else {
+                 // If not answered, don't mark correct/incorrect, but still show the answer if enabled
+                 feedbackHTML = '<div class="answer-feedback">⚠️ Not Answered.</div>';
+            }
+
+            // Display the answer if the user requested it after submission, or if it was incorrect
+            if (showAnswers || selectedInput !== q.answer) {
+                // Check if an existing answer box is present, otherwise create a new one
+                let answerBox = questionCard.querySelector('.answer');
+                if (!answerBox) {
+                    answerBox = document.createElement('div');
+                    answerBox.className = 'answer';
+                    questionCard.appendChild(answerBox);
+                }
+                answerBox.innerHTML = `<strong>Correct Answer:</strong> ${q.answer}`;
+                answerBox.style.display = 'block';
+
+                // Prepend feedback right after the options list
+                if (!questionCard.querySelector('.answer-feedback')) {
+                    questionCard.querySelector('.options-list').insertAdjacentHTML('afterend', feedbackHTML);
+                }
+            }
+        });
+
+        // 5. Display the final score
+        scoreCard.innerHTML = `💯 Quiz Complete! You scored **${score}** out of **${totalQuestions}**.`;
+        scoreCard.style.display = 'block';
+        
+        // Disable the submit button after scoring
+        document.getElementById('submitButton').style.display = 'none';
+
+        // Scroll to the score card
+        scoreCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initialize the quiz when the page loads
+    window.onload = generateQuiz;
+</script>
+
+</body>
+</html>
